@@ -206,9 +206,71 @@ def api_register(request):
                 'traceback': traceback.format_exc()
             })
 
-        data = serializers.serialize('json', new_user);
+        data = get_user_data(new_user.id)
 
     else:
         pass
 
     return JsonResponse(data)
+
+
+@csrf_exempt
+def api_update(request):
+    data = {}
+    if request.method == 'POST':
+        post_data = json.loads(request.body.decode('utf-8'))
+        print(post_data)
+
+        try:
+            student_id = int(post_data['student'])
+            assignment_id = int(post_data['assignment'])
+            grade = post_data['grade']
+        except KeyError as e:
+            return get_error_response(e)
+
+        try:
+            user = User.objects.get(pk=student_id)
+        except User.DoesNotExist as e:
+            return get_error_response(e)
+
+        try:
+            assignment = Assignment.objects.get(pk=assignment_id)
+        except Assignment.DoesNotExist as e:
+            return get_error_response(e)
+
+        if grade is not None:
+            grade = int(grade)
+        else:
+            Grade.objects.get(user=user, assignment=assignment).delete()
+            return JsonResponse(data)
+
+        try:
+            grade_object = Grade.objects.get(user=user, assignment=assignment)
+            grade_object.value = grade
+        except Grade.DoesNotExist:
+            grade_object = Grade(
+                assignment=assignment,
+                user=user,
+                value=grade
+            )
+
+        try:
+            grade_object.save()
+        except Exception as e:
+            return get_error_response(e)
+
+        data = {'success': True}
+
+    else:
+        pass;
+
+    return JsonResponse(data)
+
+
+def get_error_response(e):
+    return JsonResponse({
+                'success': False,
+                'error': e.__class__.__name__,
+                'content': str(e),
+                'traceback': traceback.format_exc()
+            })

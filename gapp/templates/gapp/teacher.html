@@ -106,11 +106,11 @@
 				<button ng-click="tbl.showPopup('new_ass')" class="mdl-button mdl-js-button mdl-button--accent mdl-cell mdl-cell--2-col add-assignment">
 					New assignment
 				</button>
-				<button ng-click="tbl.selectMultiple()" class="mdl-button mdl-js-button mdl-button--accent mdl-cell mdl-cell--2-col add-assignment" ng-class="{'mdl-button--raised': tbl.multiselect}">
+				<button ng-click="tbl.selectMultiple()" class="mdl-button mdl-js-button mdl-button--accent mdl-cell mdl-cell--2-col add-assignment" ng-class="{'mdl-button--raised': multiselect}">
 					Select multiple
 				</button>
 
-				<table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp mdl-cell mdl-cell--12-col students-table" ng-class="{'mdl-badge mdl-badge--overlap': tbl.multiselect}" data-badge="//tbl.selected.length//">
+				<table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp mdl-cell mdl-cell--12-col students-table" ng-class="{'mdl-badge mdl-badge--overlap': multiselect}" data-badge="//selected.length//">
 					<thead>
 					<tr>
 						<th class="mdl-data-table__cell--non-numeric student-name">Name</th>
@@ -125,11 +125,11 @@
 					</tr>
 					</thead>
 					<tbody>
-					<tr ng-repeat="student in (students | filter:query)" ng-class="{'selected': tbl.studentSelected(student)}" ng-click="tbl.select(student)">
+					<tr ng-repeat="student in (students | filter:query)" ng-class="{'selected': studentSelected(student)}" ng-click="tbl.select(student)">
 						<td class="mdl-data-table__cell--non-numeric student-name">//student.firstName// //student.lastName//</td>
 						<td class="student-code">//student.code//</td>
 						<td class="assignment-col" ng-repeat="ass in assignments track by $index">
-							<input ng-click="$event.stopPropagation()" type="number" class="ass-grade" ng-model="grade" ng-change="tbl.updateStudent(student, ass, grade)" value="//student.grades[ass.id]//"/>
+							<input ng-click="$event.stopPropagation()" type="number" class="ass-grade" ng-model="grade" ng-change="updateStudent(student, ass, grade)" value="//student.grades[ass.id]//"/>
 						</td>
 					</tr>
 					</tbody>

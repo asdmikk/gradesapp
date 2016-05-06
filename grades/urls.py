@@ -24,6 +24,7 @@ urlpatterns = [
     url(r'^api/login$', views.api_login),
     url(r'^api/user/(?P<user_id>\d+)/$', views.api_user),
     url(r'^api/users$', views.api_users),
+    url(r'^api/update$', views.api_update),
     url(r'^login$', views.login),
     url(r'^app$', views.app),
     url(r'^student$', views.student),

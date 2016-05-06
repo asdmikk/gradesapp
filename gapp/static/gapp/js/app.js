@@ -71,17 +71,6 @@ app.run(function ($rootScope) {
         $rootScope.users = usrs;
     }
 
-	// HANDLES INITIAL ROOTING
-
-	// if (window.localStorage['userId']) {
-	// 	$rootScope.currenUser = _.find($rootScope.users, function (u) {return u.id == window.localStorage['userId']});
-	// } else {
-	// 	var page = window.location.href.split("/").pop();
-	// 	if (page !== 'login.html') {
-	// 		window.localStorage.removeItem('userId');
-	// 		window.location.replace('./login.html');
-	// 	}
-	// }
 });
 
 app.controller('AppCtrl', function ($scope, $rootScope) {
@@ -95,6 +84,8 @@ app.controller('AppCtrl', function ($scope, $rootScope) {
 		$rootScope.currentUser = undefined;
 		this.currentUser = $rootScope.currentUser;
 		window.localStorage.removeItem('user');
+		window.localStorage.removeItem('users');
+		window.localStorage.removeItem('assignments');
 		window.location.href = ('/login');
 	}
 });
@@ -148,31 +139,8 @@ app.controller('LoginCtrl', function ($scope, $rootScope, $http) {
 				$scope.error = response.error;
 			}
 		});
-		// var user = this.getValidUser(this.user);
-		// if (user) {
-		// 	$rootScope.currenUser = user;
-		// 	$rootScope.$broadcast('userChanged');
-		// 	this.error = false;
-		// 	window.localStorage['userId'] = user.id;
-		// 	if (user.status === 'student') {
-		// 		window.location.replace('./student.html')
-		// 	} else if (user.status === 'teacher') {
-		// 		window.location.replace('./teacher.html')
-		// 	}
-		// } else {
-		// 	this.error = true;
-		// }
 	};
 
-	// this.getValidUser = function (user) {
-	// 	var usr = undefined;
-	// 	$rootScope.users.forEach(function (u) {
-	// 		if (user.email === u.email && user.pass === u.pass) {
-	// 			usr = u;
-	// 		}
-	// 	});
-	// 	return usr;
-	// }
 });
 
 app.controller('RegisterCtrl', function ($rootScope, $scope, $http, $timeout) {
@@ -188,26 +156,8 @@ app.controller('RegisterCtrl', function ($rootScope, $scope, $http, $timeout) {
 		$(".student-code").slideUp();
 	});
 
-	// using jQuery
-	this.getCookie = function(name) {
-		var cookieValue = null;
-		if (document.cookie && document.cookie != '') {
-			var cookies = document.cookie.split(';');
-			for (var i = 0; i < cookies.length; i++) {
-				var cookie = jQuery.trim(cookies[i]);
-				// Does this cookie string begin with the name we want?
-				if (cookie.substring(0, name.length + 1) == (name + '=')) {
-					cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-					break;
-				}
-			}
-		}
-		return cookieValue;
-	};
-
 	this.register = function () {
 		var url = 'http://127.0.0.1:8000/api/register';
-		// this.user.CSRF = this.getCookie('csrftoken');
 		data = this.user;
 
 		this.user.status = this.status;
@@ -221,48 +171,31 @@ app.controller('RegisterCtrl', function ($rootScope, $scope, $http, $timeout) {
 		var data = JSON.stringify(this.user);
 
 		$http.post(url, data).then(function (response) {
-			console.log('respinse', response);
-			response = response.data;
-			if (!response.success) {
-				console.log('error,', response.error)
-				$scope.error = response.error;
-
-				console.log('scope error', $scope.error);
-				return;
-			} else {
+            response = response.data;
+            if (response.success) {
 				$scope.error = undefined;
-				window.location.href = '/app'
+                var user = response.user;
+				window.localStorage['user'] = JSON.stringify(user);
+                window.localStorage['assignments'] = JSON.stringify(response.assignments);
+
+                if (response.user.status === 'teacher') {
+                    var url = '/api/users';
+                    $http.get(url).then(function (response) {
+                        response = response.data;
+                        var usrs = response.users.map(function (e) {
+                           return e.user;
+                        });
+                        window.localStorage['users'] = JSON.stringify(usrs);
+                        routeToApp(user);
+                    });
+                } else {
+                    routeToApp(user);
+                }
+			} else {
+				$scope.error = response.error;
 			}
 		});
 
-		// $.post(url, data, function (response) {
-			// console.log('respinse', response);
-			// if (!response.success) {
-			// 	console.log('error,', response.error)
-			// 	console.log('this', this)
-			// 	this.error = response.error;
-			// 	return;
-			// } else {
-			// 	this.error = undefined;
-			// }
-		// });
-		// if (!this.emailAvailable(this.user.email)) {
-		// 	this.error = true;
-		// 	return;
-		// }
-		// if (this.infoSet) {
-		// 	this.user.id = Math.random();
-		// 	$rootScope.users.push(this.user);
-		// 	$rootScope.currenUser = this.user;
-		// 	$rootScope.$broadcast('userChanged');
-		// 	this.error = false;
-		// 	window.localStorage['userId'] = this.user.id;
-		// 	if (this.user.status === 'student') {
-		// 		window.location.replace('./student.html')
-		// 	} else if (this.user.status === 'teacher') {
-		// 		window.location.replace('./teacher.html')
-		// 	}
-		// }
 	};
 
 	this.emailAvailable = function (email) {
@@ -282,8 +215,8 @@ app.controller('TableCtrl', function ($scope, $rootScope, $interval, $http) {
 	$scope.students = $rootScope.users.filter(function (u) { return u.status === 'student' });
 	$scope.assignments = $rootScope.assignments;
 	$scope.assignments = $rootScope.assignments2;
-	this.selected = [];
-	this.multiselect = false;
+	$scope.selected = [];
+	$scope.multiselect = false;
 	this.tab = 'all';
 
 
@@ -326,32 +259,49 @@ app.controller('TableCtrl', function ($scope, $rootScope, $interval, $http) {
 	};
 
 	this.selectMultiple = function () {
-		this.multiselect = !this.multiselect;
-		this.selected = [];
+		$scope.multiselect = !$scope.multiselect;
+		$scope.selected = [];
 	};
 
 	this.select = function (student) {
-		if (!this.multiselect) return;
-		if (!_.contains(this.selected, student)) {
-			this.selected.push(student);
+		if (!$scope.multiselect) return;
+		if (!_.contains($scope.selected, student)) {
+			$scope.selected.push(student);
 		} else {
-			this.selected = _.without(this.selected, student);
+			$scope.selected = _.without($scope.selected, student);
 		}
 	};
 
-	this.studentSelected = function (student) {
-		var b = _.contains(this.selected, student);
+	$scope.studentSelected = function (student) {
+		var b = _.contains($scope.selected, student);
 		return b;
 	};
 
-	this.updateStudent = function (student, ass, grade) {
-		if (this.multiselect && this.studentSelected(student)) {
-			this.selected.forEach(function (s) {
+    function saveUpdate(student, ass, grade) {
+        var url = '/api/update';
+        var data = {
+            student: student.id,
+            assignment: ass.id,
+            grade: grade
+        };
+        $http.post(url, data);
+    }
+
+	$scope.updateStudent = function (student, ass, grade) {
+        console.log('multiselect', $scope.multiselect);
+        console.log('$scope.studentSelected(student)', $scope.studentSelected(student));
+		if ($scope.multiselect && $scope.studentSelected(student)) {
+            console.log('changeing multiple')
+			$scope.selected.forEach(function (s) {
 				s.grades[ass.id] = grade;
+                saveUpdate(s, ass, grade)
 			});
 		} else {
+            console.log('changeingsingle ')
 			student.grades[ass.id] = grade;
+            saveUpdate(student, ass, grade)
 		}
+        window.localStorage['users'] = JSON.stringify($rootScope.users)
 	};
 
 	this.showPopup = function (name) {
