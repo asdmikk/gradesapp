@@ -1,4 +1,5 @@
 from django.db import models
+import uuid
 
 
 class Assignment(models.Model):
@@ -11,6 +12,7 @@ class Assignment(models.Model):
 class Grade(models.Model):
     value = models.PositiveSmallIntegerField()
     assignment = models.ForeignKey('Assignment', on_delete=models.CASCADE)
+    user = models.ForeignKey('User', on_delete=models.CASCADE, null=True)
 
     def __str__(self):
         return str(self.value)

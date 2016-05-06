@@ -4,7 +4,7 @@ import traceback
 from django.shortcuts import render
 from django.core import serializers
 from django.http import HttpResponse, JsonResponse
-from .models import User
+from .models import User, Assignment, Grade
 from django.views.decorators.csrf import csrf_exempt
 
 # Create your views here.
@@ -17,6 +17,72 @@ def login(request):
 def app(request):
     return render(request, 'gapp/test.html', {})
 
+
+def student(request):
+    return render(request, 'gapp/student.html', {})
+
+
+def teacher(request):
+    return render(request, 'gapp/teacher.html', {})
+
+
+def api_user(request, user_id):
+    data = get_user_data(user_id)
+    return JsonResponse(data)
+
+
+def api_users(request):
+    return JsonResponse({
+        'success': True,
+        'users': [get_user_data(x.id) for x in User.objects.all()]
+    })
+
+
+def get_user_data(user_id):
+    try:
+        user_object = User.objects.get(pk=user_id)
+    except Exception as e:
+        return {
+            'success': False,
+            'error': e.__class__.__name__,
+            'content': str(e),
+            'traceback': traceback.format_exc()
+        }
+
+    grades = {}
+
+    if user_object.status == 0:
+        status = 'student'
+
+        try:
+            grade_objects = Grade.objects.filter(user=user_object)
+            print(grade_objects)
+            for grade in grade_objects:
+                grades[str(grade.assignment.id)] = grade.value
+        except Grade.DoesNotExist:
+            pass
+
+    else:
+        status = 'teacher'
+
+    assignment_objects = Assignment.objects.all()
+
+    return {
+        'success': True,
+        'user': {
+            'id': user_object.id,
+            'email': user_object.email,
+            'firstName': user_object.first_name,
+            'lastName': user_object.last_name,
+            'status': status,
+            'code': user_object.student_code,
+            'grades': grades
+        },
+        'assignments': [{
+            'id': str(x.id),
+            'name': x.name
+        } for x in assignment_objects]
+    }
 
 @csrf_exempt
 def api_login(request):
@@ -43,8 +109,41 @@ def api_login(request):
                 'success': False,
                 'error': 'No match found'
             })
+        # {id: 312123, email: 'm@m.mm', firstName: 'Mikk', lastName: 'K', pass: 's', status: 'student', code: 123123, grades: grades},
 
-        data = {'success': True}
+        grades = {}
+
+        if existing_user.status == 0:
+            status = 'student'
+
+            try:
+                grade_objects = Grade.objects.filter(user=existing_user)
+                print(grade_objects)
+                for grade in grade_objects:
+                    grades[str(grade.assignment.id)] = grade.value
+            except Grade.DoesNotExist:
+                pass
+        else:
+            status = 'teacher'
+
+        assignment_objects = Assignment.objects.all()
+
+        data = {
+            'success': True,
+            'user': {
+                'id': existing_user.id,
+                'email': existing_user.email,
+                'firstName': existing_user.first_name,
+                'lastName': existing_user.last_name,
+                'status': status,
+                'code': existing_user.student_code,
+                'grades': grades
+            },
+            'assignments': [{
+                'id': str(x.id),
+                'name': x.name
+            } for x in assignment_objects]
+        }
 
     else:
         pass
@@ -107,7 +206,7 @@ def api_register(request):
                 'traceback': traceback.format_exc()
             })
 
-        data = {'success': True}
+        data = serializers.serialize('json', new_user);
 
     else:
         pass

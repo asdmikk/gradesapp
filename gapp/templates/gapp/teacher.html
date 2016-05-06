@@ -1,0 +1,181 @@
+<!doctype html>
+<html ng-app="GradesApp" xmlns="http://www.w3.org/1999/html">
+
+<head>
+    {% load staticfiles %}
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+	<link rel="stylesheet" href="https://code.getmdl.io/1.1.3/material.indigo-pink.min.css">
+	<script defer src="https://code.getmdl.io/1.1.3/material.min.js"></script>
+
+	<link rel="stylesheet" href="{% static 'gapp/style/style.css' %}">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.2/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+
+    <script src="{% static 'gapp/js/app.js' %}"></script>
+
+	<title>Grades</title>
+</head>
+
+<body ng-controller="AppCtrl as app">
+
+<!-- TEACHER -->
+<div class="mdl-layout mdl-js-layout mdl-layout--fixed-header teacher-view">
+	<header class="mdl-layout__header">
+		<div class="mdl-layout__header-row">
+			<span class="mdl-layout-title">Grades</span>
+		</div>
+		<!--<div class="mdl-layout__tab-bar mdl-js-ripple-effect">-->
+		<!--<a href="#fixed-tab-1" class="mdl-layout__tab is-active">Grades</a>-->
+		<!--<a href="#fixed-tab-2" class="mdl-layout__tab">Assignments</a>-->
+		<!--</div>-->
+	</header>
+	<div class="mdl-layout__drawer">
+		<span class="mdl-layout-title">Menu</span>
+		<nav class="mdl-navigation">
+			<a class="mdl-navigation__link" href="" ng-click="app.logout()">Log out</a>
+		</nav>
+	</div>
+
+	<main class="mdl-layout__content">
+		<section class="mdl-layout__tab-panel is-active" id="fixed-tab-1">
+			<div ng-controller="TableCtrl as tbl" class="page-content mdl-grid">
+
+				<!--New assignment popup-->
+				<div ng-show="tbl.newAssPopupVisible" class="mdl-layout mdl-js-layout mdl-color--grey-100 popup">
+					<div class="mdl-card mdl-shadow--16dp">
+						<div class="mdl-card__title mdl-color--primary mdl-color-text--white">
+							<h2 class="mdl-card__title-text">New assignment</h2>
+						</div>
+						<div class="mdl-card__supporting-text">
+							<form ng-submit="tbl.create()">
+								<div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+									<input ng-model="tbl.newAssName" class="mdl-textfield__input" type="text" id="name" autocomplete="off"/>
+									<label class="mdl-textfield__label" for="name">Assignment name</label>
+								</div>
+								<input ng-show="false" type="submit">
+							</form>
+						</div>
+						<div class="mdl-card__actions mdl-card--border">
+							<button ng-click="tbl.create()" class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect">Create</button>
+							<button ng-click="tbl.cancel()" class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect">Cancel</button>
+						</div>
+					</div>
+				</div>
+
+				<!--Delete assignment popup-->
+				<div ng-show="false" class="mdl-layout mdl-js-layout mdl-color--grey-100 popup">
+					<div class="mdl-card mdl-shadow--16dp">
+						<div class="mdl-card__title mdl-color--primary mdl-color-text--white">
+							<h2 class="mdl-card__title-text">Delete assignment</h2>
+						</div>
+						<div class="mdl-card__supporting-text">
+							Are you sure you want to delete this assignment?<br><br>
+						</div>
+						<div class="mdl-card__actions mdl-card--border">
+							<button ng-click="tbl.cancel()" class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect">Cancel</button>
+							<button ng-click="tbl.delete()" class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect">Yes</button>
+						</div>
+					</div>
+				</div>
+
+				<!---->
+				<div ng-show="false" class="mdl-layout mdl-js-layout mdl-color--grey-100 popup">
+					<div class="mdl-card mdl-shadow--16dp">
+						<div class="mdl-card__title mdl-color--primary mdl-color-text--white">
+							<h2 class="mdl-card__title-text">Add Grade</h2>
+						</div>
+						<div class="mdl-card__supporting-text">
+							Are you sure you want to delete this assignment?<br><br>
+						</div>
+						<div class="mdl-card__actions mdl-card--border">
+							<button ng-click="tbl.cancel()" class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect">Cancel</button>
+							<button ng-click="tbl.delete()" class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect">Yes</button>
+						</div>
+					</div>
+				</div>
+
+				<div class="mdl-textfield mdl-js-textfield mdl-cell mdl-cell--8-col">
+					<input class="mdl-textfield__input" type="text" id="sample1" ng-model="query">
+					<label class="mdl-textfield__label" for="sample1">Search...</label>
+				</div>
+
+				<button ng-click="tbl.showPopup('new_ass')" class="mdl-button mdl-js-button mdl-button--accent mdl-cell mdl-cell--2-col add-assignment">
+					New assignment
+				</button>
+				<button ng-click="tbl.selectMultiple()" class="mdl-button mdl-js-button mdl-button--accent mdl-cell mdl-cell--2-col add-assignment" ng-class="{'mdl-button--raised': tbl.multiselect}">
+					Select multiple
+				</button>
+
+				<table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp mdl-cell mdl-cell--12-col students-table" ng-class="{'mdl-badge mdl-badge--overlap': tbl.multiselect}" data-badge="//tbl.selected.length//">
+					<thead>
+					<tr>
+						<th class="mdl-data-table__cell--non-numeric student-name">Name</th>
+						<th class="mdl-data-table__cell student-code">Student code</th>
+						<th class="mdl-data-table__cell assignment-col" ng-repeat="assignment in assignments track by $index" ng-mouseover="tbl.hoverIn(this, assignment)" ng-mouseleave="tbl.hoverOut()">
+							<!--//assignment.name//-->
+							<!--<button ng-click="ass.remove(assignment)" class="mdl-button mdl-js-button mdl-button&#45;&#45;icon">-->
+							<!--<i class="material-icons">delete_forever</i>-->
+							<!--</button>-->
+							<input ng-blur="tbl.checkEmpty(assignment)" class="ass-name-input" type="text" ng-model="assignment.name" value="//assignment.name//">
+						</th>
+					</tr>
+					</thead>
+					<tbody>
+					<tr ng-repeat="student in (students | filter:query)" ng-class="{'selected': tbl.studentSelected(student)}" ng-click="tbl.select(student)">
+						<td class="mdl-data-table__cell--non-numeric student-name">//student.firstName// //student.lastName//</td>
+						<td class="student-code">//student.code//</td>
+						<td class="assignment-col" ng-repeat="ass in assignments track by $index">
+							<input ng-click="$event.stopPropagation()" type="number" class="ass-grade" ng-model="grade" ng-change="tbl.updateStudent(student, ass, grade)" value="//student.grades[ass.id]//"/>
+						</td>
+					</tr>
+					</tbody>
+				</table>
+
+			</div>
+		</section>
+		<!--<section class="mdl-layout__tab-panel" id="fixed-tab-2">-->
+			<!--<div ng-controller="AssCtrl as ass" class="page-content assignments">-->
+
+				<!--<div class="card mdl-card mdl-shadow&#45;&#45;4dp">-->
+					<!--<div class="mdl-card__supporting-text">-->
+						<!--<ul class="demo-list-icon mdl-list">-->
+							<!--<li class="mdl-list__item" ng-repeat="assignment in ass.assignments">-->
+									<!--<span class="mdl-list__item-primary-content">-->
+										<!--<i class="material-icons mdl-list__item-icon">assignment</i>-->
+										<!--<input class="ass-name-input" type="text" ng-model="assignment.name" value="//assignment.name//">-->
+									<!--</span>-->
+									<!--<span class="mdl-list__item-secondary-action">-->
+									  <!--<button ng-click="ass.remove(assignment)" class="mdl-button mdl-js-button mdl-button&#45;&#45;icon">-->
+										  <!--<i class="material-icons">delete</i>-->
+									  <!--</button>-->
+									<!--</span>-->
+							<!--</li>-->
+						<!--</ul>-->
+					<!--</div>-->
+					<!--<div class="mdl-card__actions mdl-card&#45;&#45;border">-->
+						<!--<form action="#" ng-submit="ass.create()">-->
+							<!--<div class="mdl-textfield mdl-js-textfield mdl-textfield&#45;&#45;expandable">-->
+								<!--<label class="mdl-button mdl-js-button mdl-button&#45;&#45;icon" for="sample6">-->
+									<!--<i class="material-icons">add</i>-->
+								<!--</label>-->
+								<!--<div class="mdl-textfield__expandable-holder">-->
+									<!--<input class="mdl-textfield__input" type="text" id="sample6" ng-model="ass.newAssName">-->
+									<!--<label class="mdl-textfield__label" for="sample-expandable">Expandable Input</label>-->
+								<!--</div>-->
+								<!--<input type="submit" ng-show="false">-->
+							<!--</div>-->
+						<!--</form>-->
+					<!--</div>-->
+				<!--</div>-->
+			<!--</div>-->
+		<!--</section>-->
+	</main>
+
+</div>
+
+</body>
+</html>

@@ -22,6 +22,10 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^api/register$', views.api_register),
     url(r'^api/login$', views.api_login),
+    url(r'^api/user/(?P<user_id>\d+)/$', views.api_user),
+    url(r'^api/users$', views.api_users),
     url(r'^login$', views.login),
-    url(r'^app$', views.app)
+    url(r'^app$', views.app),
+    url(r'^student$', views.student),
+    url(r'^teacher$', views.teacher)
 ]

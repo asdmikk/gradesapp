@@ -1,5 +1,10 @@
 var app = angular.module('GradesApp', []);
 
+app.config(function ($interpolateProvider) {
+    $interpolateProvider.startSymbol('//');
+    $interpolateProvider.endSymbol('//');
+});
+
 app.run(function ($rootScope) {
 	//$rootScope.currenUser;
 	$rootScope.assignments = ['1 KT', '2 KT', 'Lisapunktid', 'Eksam'];
@@ -47,6 +52,25 @@ app.run(function ($rootScope) {
 
 	$rootScope.assignments = ['1 KT', '2 KT', 'Lisapunktid', 'Eksam'];
 
+    if (window.localStorage['user']) {
+		var usr = JSON.parse(window.localStorage['user']);
+        var asss = JSON.parse(window.localStorage['assignments']);
+        $rootScope.assignments2 = asss;
+        console.log('cuser', usr);
+        $rootScope.currentUser = usr;
+	} else {
+        var page = window.location.href.split("/").pop();
+		if (page !== 'login') {
+			window.localStorage.removeItem('user');
+            window.location.href = '/login';
+		}
+	}
+
+    if (window.localStorage['users']) {
+        var usrs = JSON.parse(window.localStorage['users']);
+        $rootScope.users = usrs;
+    }
+
 	// HANDLES INITIAL ROOTING
 
 	// if (window.localStorage['userId']) {
@@ -70,8 +94,8 @@ app.controller('AppCtrl', function ($scope, $rootScope) {
 	this.logout = function () {
 		$rootScope.currentUser = undefined;
 		this.currentUser = $rootScope.currentUser;
-		window.localStorage.removeItem('userId');
-		window.location.replace('./login.html');
+		window.localStorage.removeItem('user');
+		window.location.href = ('/login');
 	}
 });
 
@@ -81,6 +105,14 @@ app.controller('IntroCtrl', function ($rootScope) {
 		this.login = !this.login;
 	};
 });
+
+function routeToApp(user) {
+    if (user.status === 'student') {
+        window.location.href = '/student';
+    } else {
+        window.location.href = '/teacher'
+    }
+}
 
 app.controller('LoginCtrl', function ($scope, $rootScope, $http) {
 	this.login = true;
@@ -95,7 +127,23 @@ app.controller('LoginCtrl', function ($scope, $rootScope, $http) {
 			console.log('resoponse', response);
 			if (response.success) {
 				$scope.error = undefined;
-				window.location.href = '/app'
+                var user = response.user;
+				window.localStorage['user'] = JSON.stringify(user);
+                window.localStorage['assignments'] = JSON.stringify(response.assignments);
+
+                if (response.user.status === 'teacher') {
+                    var url = '/api/users';
+                    $http.get(url).then(function (response) {
+                        response = response.data;
+                        var usrs = response.users.map(function (e) {
+                           return e.user;
+                        });
+                        window.localStorage['users'] = JSON.stringify(usrs);
+                        routeToApp(user);
+                    });
+                } else {
+                    routeToApp(user);
+                }
 			} else {
 				$scope.error = response.error;
 			}
@@ -230,14 +278,23 @@ app.controller('RegisterCtrl', function ($rootScope, $scope, $http, $timeout) {
 	}
 });
 
-app.controller('TableCtrl', function ($rootScope) {
-	this.students = $rootScope.users.filter(function (u) { return u.status === 'student' });
-	this.assignments = $rootScope.assignments;
-	this.assignments = $rootScope.assignments2;
+app.controller('TableCtrl', function ($scope, $rootScope, $interval, $http) {
+	$scope.students = $rootScope.users.filter(function (u) { return u.status === 'student' });
+	$scope.assignments = $rootScope.assignments;
+	$scope.assignments = $rootScope.assignments2;
 	this.selected = [];
 	this.multiselect = false;
 	this.tab = 'all';
 
+
+    $scope.$watch(function () {
+        return $rootScope.users
+    }, function () {
+        $scope.$applyAsync(function () {
+            $scope.students = $rootScope.users.filter(function (u) { return u.status === 'student' });
+            $scope.assignments = $rootScope.assignments2;
+        });
+    });
 
 	this.hoverIn = function (event, assignment) {
 		if (this.hoverTimeout) {
@@ -327,15 +384,41 @@ app.controller('TableCtrl', function ($rootScope) {
 
 	this.remove  = function (assignment) {
 		$rootScope.assignments2 = _.without($rootScope.assignments2, assignment);
-		this.assignments = $rootScope.assignments2;
+		$scope.assignments = $rootScope.assignments2;
 		console.log(assignment);
 		$rootScope.$broadcast('assChange');
 	}
 });
 
-app.controller('GradesCtrl', function ($rootScope) {
-	this.assignments = $rootScope.assignments2;
-	this.grades = $rootScope.currenUser.grades;
+app.controller('GradesCtrl', function ($scope, $rootScope, $http, $interval) {
+	$scope.assignments = $rootScope.assignments2;
+    console.log('assss', $rootScope.assignments2)
+    console.log('uress', $rootScope.currentUser)
+	$scope.grades = $rootScope.currentUser.grades;
+
+    $scope.$watch(function () {
+        return $rootScope.currentUser
+    }, function () {
+        $scope.$applyAsync(function () {
+            $scope.grades = $rootScope.currentUser.grades;
+            $scope.assignments = $rootScope.assignments2;
+        });
+    });
+
+    this.reloadInterval = $interval(function () {
+        console.log('asd');
+        var url = '/api/user/' + $rootScope.currentUser.id;
+        $http.get(url).then(function (response) {
+            response = response.data;
+            console.log('reload resp', response);
+            if (response.success) {
+                window.localStorage['user'] = JSON.stringify(response.user);
+                window.localStorage['assignments'] = JSON.stringify(response.assignments);
+                $rootScope.currentUser = response.user;
+                $rootScope.assignments2 = response.assignments;
+            }
+        });
+    }, 3000);
 
 	this.submit = function () {
 		var file = $('#file-input')[0].files[0];
@@ -351,7 +434,7 @@ app.controller('GradesCtrl', function ($rootScope) {
 	};
 
 	this.submitAssignment = function (index) {
-		this.currentAssignment = this.assignments[index];
+		this.currentAssignment = $scope.assignments[index];
 		console.log(this.currentAssignment)
 	};
 
