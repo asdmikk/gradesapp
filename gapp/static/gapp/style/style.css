@@ -29,6 +29,45 @@ form .name {
 .popup {
     align-items: center;
     justify-content: center;
+    background: blue;
+}
+
+.upload-icon {
+    color: grey;
+    position: relative;
+    top: 2px;
+    font-size: 14px;
+}
+
+.upload-text {
+    color: grey;
+    position: relative;
+    top: 2px;
+    font-size: 12px;
+    font-weight: 300;
+    letter-spacing: 1px;
+}
+
+.check-icon {
+    color: green;
+    font-size: 16px;
+    position: relative;
+    top: 2px;
+    font-weight: bold;
+}
+
+.greenbackground {
+    background: #C8E6C9;
+}
+
+.mdl-progress.mdl-js-progress {
+    width: 100px;
+}
+
+.submission-cell {
+    width: 200px;
+    text-align: center;
+
 }
 
 .edit-popup .row {

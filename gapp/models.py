@@ -18,6 +18,16 @@ class Grade(models.Model):
         return str(self.assignment.name) + ' - ' + str(self.value)
 
 
+class Submission(models.Model):
+    submitted = models.BooleanField(default=False)
+    assignment = models.ForeignKey('Assignment', on_delete=models.CASCADE)
+    user = models.ForeignKey('User', on_delete=models.CASCADE, null=True)
+    comment = models.CharField(max_length=255, null=True, blank=True)
+
+    def __str__(self):
+        return str(self.assignment.name) + ' - ' + str(self.submitted)
+
+
 class User(models.Model):
     email = models.EmailField(max_length=255)
     password = models.CharField(max_length=128)

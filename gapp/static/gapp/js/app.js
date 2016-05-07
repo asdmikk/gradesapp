@@ -6,52 +6,6 @@ app.config(function ($interpolateProvider) {
 });
 
 app.run(function ($rootScope) {
-	//$rootScope.currenUser;
-	$rootScope.assignments = ['1 KT', '2 KT', 'Lisapunktid', 'Eksam'];
-	$rootScope.assignments2 = [{name:'1 KT', id:"dasd21"},{name:'2 KT', id:'jkl243'},{name:'Lisa', id:"lkasdjka2"},{name:'Eksam', id:'asdsad8'}];
-	var grades = {
-		'dasd21': 5,
-		'jkl243': 2,
-		'lkasdjka2': 3,
-		'asdsad8': 7
-	};
-	var grades1 = {
-		'dasd21': 1,
-		'jkl243': 4,
-		'lkasdjka2': 5
-
-	};
-	var grades2 = {
-		'dasd21': 7,
-		'jkl243': 0,
-		'lkasdjka2': 9,
-		'asdsad8': 1
-	};
-	var grades3 = {
-		'dasd21': 11,
-		'jkl243': 4,
-		'lkasdjka2': 0,
-		'asdsad8': 7
-	};
-	var grades4 = {
-		'dasd21': 4,
-		'jkl243': 4,
-		'lkasdjka2': 5,
-		'asdsad8': 5
-	};
-
-	$rootScope.users = [
-		{id: 312123, email: 'm@m.mm', firstName: 'Mikk', lastName: 'K', pass: 's', status: 'student', code: 123123, grades: grades},
-		{id: 312133, email: 'm@m1.mm', firstName: 'Paul', lastName: 'K', pass: 's', status: 'student', code: 123523, grades: grades1},
-		{id: 412123, email: 'm@m2.mm', firstName: 'Jeesus', lastName: 'K', pass: 's', status: 'student', code: 123153, grades: grades2},
-		{id: 312223, email: 'm@m3.mm', firstName: 'Roberta', lastName: 'K', pass: 's', status: 'student', code: 126123, grades: grades3},
-		{id: 312124, email: 'm@m4.mm', firstName: 'Roberto', lastName: 'K', pass: 's', status: 'student', code: 123723, grades: grades4},
-		{
-			id: 123421, email: 't@t.tt', firstName: 'Teacher', lastName: 'T', pass: 't', status: 'teacher'
-		}];
-
-	$rootScope.assignments = ['1 KT', '2 KT', 'Lisapunktid', 'Eksam'];
-
     if (window.localStorage['user']) {
 		var usr = JSON.parse(window.localStorage['user']);
         var asss = JSON.parse(window.localStorage['assignments']);
@@ -164,6 +118,8 @@ app.controller('RegisterCtrl', function ($rootScope, $scope, $http, $timeout) {
 		this.infoSet = this.user.email && this.user.firstName && this.user.lastName && this.user.pass
 			&& (this.status === 'student' && this.user.code || this.status === 'teacher');
 
+        if (!this.infoSet) return;
+
 		if (this.status === 'teacher') {
 			this.user.code = '';
 		}
@@ -261,13 +217,13 @@ app.controller('TableCtrl', function ($scope, $rootScope, $interval, $timeout, $
 
 	this.edit = function (student) {
 		console.log('student', student);
-		if (this.newAssPopupVisible) {
+		if ($scope.newAssPopupVisible) {
 			return;
 		}
 		this.currentStudent = student;
 	};
 
-	this.selectMultiple = function () {
+	$scope.selectMultiple = function () {
 		$scope.multiselect = !$scope.multiselect;
 		$scope.selected = [];
 	};
@@ -315,7 +271,7 @@ app.controller('TableCtrl', function ($scope, $rootScope, $interval, $timeout, $
 
 	this.showPopup = function (name) {
 		if (name === 'new_ass') {
-			this.newAssPopupVisible = true;
+			$scope.newAssPopupVisible = true;
 		} else if (name === 'edit') {
 			this.editPopupVisible = true;
 		}
@@ -330,7 +286,7 @@ app.controller('TableCtrl', function ($scope, $rootScope, $interval, $timeout, $
 				$rootScope.assignments2 = response.assignments;
 				window.localStorage['assignments'] = JSON.stringify(response.assignments);
 			});
-			this.newAssPopupVisible = false;
+			$scope.newAssPopupVisible = false;
 			this.newAssName = "";
 		}
 	};
@@ -379,11 +335,22 @@ app.controller('TableCtrl', function ($scope, $rootScope, $interval, $timeout, $
 
 	};
 
-	this.cancel = function () {
-		this.newAssPopupVisible = false;
+	$scope.cancel = function () {
+		$scope.newAssPopupVisible = false;
 		this.editPopupVisible = false;
         $scope.assignmentToDelete = undefined
 	};
+
+    $(document).keyup(function (e) {
+        if (e.keyCode === 27) {
+            $scope.$apply(function () {
+                $scope.cancel();
+                if ($scope.multiselect) {
+                    $scope.selectMultiple();
+                }
+            })
+        }
+    });
 
 	this.remove  = function (assignment) {
 		$rootScope.assignments2 = _.without($rootScope.assignments2, assignment);
@@ -395,9 +362,8 @@ app.controller('TableCtrl', function ($scope, $rootScope, $interval, $timeout, $
 
 app.controller('GradesCtrl', function ($scope, $rootScope, $http, $interval) {
 	$scope.assignments = $rootScope.assignments2;
-    console.log('assss', $rootScope.assignments2)
-    console.log('uress', $rootScope.currentUser)
 	$scope.grades = $rootScope.currentUser.grades;
+    $scope.submissions = $rootScope.currentUser.submissions;
 
     $scope.$watch(function () {
         return $rootScope.currentUser
@@ -405,8 +371,10 @@ app.controller('GradesCtrl', function ($scope, $rootScope, $http, $interval) {
         $scope.$applyAsync(function () {
             $scope.grades = $rootScope.currentUser.grades;
             $scope.assignments = $rootScope.assignments2;
+            $scope.submissions = $rootScope.currentUser.submissions;
         });
     });
+
 
     this.reloadInterval = $interval(function () {
         console.log('asd');
@@ -421,51 +389,77 @@ app.controller('GradesCtrl', function ($scope, $rootScope, $http, $interval) {
                 $rootScope.assignments2 = response.assignments;
             }
         });
-    }, 3000);
+    }, 30000);
 
-	this.submit = function () {
+    $(document).keyup(function (e) {
+        if (e.keyCode === 27) {
+            $scope.$apply(function () {
+                $scope.cancel();
+            })
+        }
+    });
+
+	$scope.submit = function () {
 		var file = $('#file-input')[0].files[0];
-		var comments = this.comments;
+		var comments = $scope.comments;
 		$('#file-input').val('');
-		this.comments = undefined;
+		$scope.comments = undefined;
 		if (file) {
 			console.log(file);
 			console.log(comments);
 			// TODO: UPLOAD FILE
+
+            var url = '/api/upload';
+            var data = {
+                submitted: true,
+                assignment: $scope.currentAssignment.id,
+                user: $rootScope.currentUser.id,
+                comment: comments
+            };
+            $http.post(url, data).then(function (response) {
+                response = response.data;
+                console.log(response)
+                window.localStorage['user'] = JSON.stringify(response.user);
+                window.localStorage['assignments'] = JSON.stringify(response.assignments);
+                $rootScope.currentUser = response.user;
+                $rootScope.assignments2 = response.assignments;
+            });
+
 		}
-		this.currentAssignment = undefined;
+		$scope.currentAssignment = undefined;
 	};
 
-	this.submitAssignment = function (index) {
-		this.currentAssignment = $scope.assignments[index];
-		console.log(this.currentAssignment)
+	$scope.submitAssignment = function (index) {
+        if ($scope.submissions[$scope.assignments[index].id]) return;
+		$scope.currentAssignment = $scope.assignments[index];
+		console.log($scope.currentAssignment)
 	};
 
-	this.cancel = function () {
-		this.currentAssignment = undefined;
+	$scope.cancel = function () {
+		$scope.currentAssignment = undefined;
 	}
 
 
 });
 
-app.controller('AssCtrl', function ($rootScope) {
-	this.assignments = $rootScope.assignments2;
-
-	this.create = function () {
-		if (this.newAssName) {
-			$rootScope.assignments2.push({
-				id: "asdas" + Math.floor((Math.random()*100)),
-				name: this.newAssName
-			});
-			this.newAssPopupVisible = false;
-			this.newAssName = "";
-		}
-	};
-
-	this.remove  = function (assignment) {
-		$rootScope.assignments2 = _.without($rootScope.assignments2, assignment);
-		this.assignments = $rootScope.assignments2;
-		console.log(assignment);
-		$rootScope.$broadcast('assChange');
-	}
-});
+// app.controller('AssCtrl', function ($rootScope) {
+// 	this.assignments = $rootScope.assignments2;
+//
+// 	this.create = function () {
+// 		if (this.newAssName) {
+// 			$rootScope.assignments2.push({
+// 				id: "asdas" + Math.floor((Math.random()*100)),
+// 				name: this.newAssName
+// 			});
+// 			this.newAssPopupVisible = false;
+// 			this.newAssName = "";
+// 		}
+// 	};
+//
+// 	this.remove  = function (assignment) {
+// 		$rootScope.assignments2 = _.without($rootScope.assignments2, assignment);
+// 		this.assignments = $rootScope.assignments2;
+// 		console.log(assignment);
+// 		$rootScope.$broadcast('assChange');
+// 	}
+// });

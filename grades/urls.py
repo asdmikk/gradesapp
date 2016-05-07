@@ -28,6 +28,7 @@ urlpatterns = [
     url(r'^api/assignment/new$', views.api_assignment_new),
     url(r'^api/assignment/update$', views.api_assignment_update),
     url(r'^api/assignment/delete$', views.api_assignment_delete),
+    url(r'^api/upload$', views.api_upload),
     url(r'^login$', views.login),
     url(r'^app$', views.app),
     url(r'^student$', views.student),

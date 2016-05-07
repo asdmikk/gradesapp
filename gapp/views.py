@@ -4,7 +4,7 @@ import traceback
 from django.shortcuts import render
 from django.core import serializers
 from django.http import HttpResponse, JsonResponse
-from .models import User, Assignment, Grade
+from .models import User, Assignment, Grade, Submission
 from django.views.decorators.csrf import csrf_exempt
 
 # Create your views here.
@@ -50,6 +50,7 @@ def get_user_data(user_id):
         }
 
     grades = {}
+    submissions = {}
 
     if user_object.status == 0:
         status = 'student'
@@ -59,6 +60,14 @@ def get_user_data(user_id):
             print(grade_objects)
             for grade in grade_objects:
                 grades[str(grade.assignment.id)] = grade.value
+        except Grade.DoesNotExist:
+            pass
+
+        try:
+            submission_objects = Submission.objects.filter(user=user_object)
+            print(submission_objects)
+            for sub in submission_objects:
+                submissions[str(sub.assignment.id)] = sub.submitted
         except Grade.DoesNotExist:
             pass
 
@@ -76,7 +85,8 @@ def get_user_data(user_id):
             'lastName': user_object.last_name,
             'status': status,
             'code': user_object.student_code,
-            'grades': grades
+            'grades': grades,
+            'submissions': submissions
         },
         'assignments': [{
             'id': str(x.id),
@@ -107,43 +117,10 @@ def api_login(request):
         except User.DoesNotExist:
             return JsonResponse({
                 'success': False,
-                'error': 'No match found'
+                'error': 'Wrong email or password'
             })
-        # {id: 312123, email: 'm@m.mm', firstName: 'Mikk', lastName: 'K', pass: 's', status: 'student', code: 123123, grades: grades},
 
-        grades = {}
-
-        if existing_user.status == 0:
-            status = 'student'
-
-            try:
-                grade_objects = Grade.objects.filter(user=existing_user)
-                print(grade_objects)
-                for grade in grade_objects:
-                    grades[str(grade.assignment.id)] = grade.value
-            except Grade.DoesNotExist:
-                pass
-        else:
-            status = 'teacher'
-
-        assignment_objects = Assignment.objects.all()
-
-        data = {
-            'success': True,
-            'user': {
-                'id': existing_user.id,
-                'email': existing_user.email,
-                'firstName': existing_user.first_name,
-                'lastName': existing_user.last_name,
-                'status': status,
-                'code': existing_user.student_code,
-                'grades': grades
-            },
-            'assignments': [{
-                'id': str(x.id),
-                'name': x.name
-            } for x in assignment_objects]
-        }
+        data = get_user_data(existing_user.id)
 
     else:
         pass
@@ -313,7 +290,7 @@ def api_assignment_update(request):
             return get_error_response(e)
 
         try:
-            existing_assignment = Assignment(pk=id)
+            existing_assignment = Assignment.objects.get(pk=id)
             existing_assignment.name = name
             existing_assignment.save()
         except Exception as e:
@@ -346,7 +323,7 @@ def api_assignment_delete(request):
             return get_error_response(e)
 
         try:
-            existing_assignment = Assignment(pk=id)
+            existing_assignment = Assignment.objects.get(pk=id)
         except Exception as e:
             return get_error_response(e)
 
@@ -373,6 +350,48 @@ def api_assignment_delete(request):
         pass
     return JsonResponse(data)
 
+
+@csrf_exempt
+def api_upload(request):
+    data = {}
+    if request.method == 'POST':
+        post_data = json.loads(request.body.decode('utf-8'))
+        print(post_data)
+
+        try:
+            submitted = post_data['submitted']
+            assignment_id = int(post_data['assignment'])
+            user_id = int(post_data['user'])
+        except KeyError as e:
+            return get_error_response(e)
+
+        try:
+            comment = post_data['comment']
+        except KeyError:
+            comment = None
+
+        try:
+            existing_assignment = Assignment.objects.get(pk=assignment_id)
+            existing_user = User.objects.get(pk=user_id)
+        except Exception as e:
+            return get_error_response(e)
+
+        try:
+            submission = Submission.objects.get(user=existing_user, assignment=existing_assignment)
+        except Submission.DoesNotExist:
+            submission = Submission(submitted=submitted, user=existing_user, assignment=existing_assignment)
+
+        try:
+            submission.save()
+        except Exception as e:
+            return get_error_response(e)
+
+        data = get_user_data(existing_user.id)
+
+    else:
+        pass
+
+    return JsonResponse(data)
 
 def get_error_response(e):
     return JsonResponse({
