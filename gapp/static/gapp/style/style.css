@@ -35,6 +35,11 @@ form .name {
     height: 50px;
 }
 
+.hidd {
+    visibility: hidden !important;
+}
+
+
 .ass-name {
     display: flex;
     align-items: center;

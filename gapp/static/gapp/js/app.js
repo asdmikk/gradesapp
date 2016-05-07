@@ -211,7 +211,7 @@ app.controller('RegisterCtrl', function ($rootScope, $scope, $http, $timeout) {
 	}
 });
 
-app.controller('TableCtrl', function ($scope, $rootScope, $interval, $http) {
+app.controller('TableCtrl', function ($scope, $rootScope, $interval, $timeout, $http) {
 	$scope.students = $rootScope.users.filter(function (u) { return u.status === 'student' });
 	$scope.assignments = $rootScope.assignments;
 	$scope.assignments = $rootScope.assignments2;
@@ -229,15 +229,24 @@ app.controller('TableCtrl', function ($scope, $rootScope, $interval, $http) {
         });
     });
 
+	$scope.$watch(function () {
+        return $rootScope.assignments2
+    }, function () {
+        $scope.$applyAsync(function () {
+            $scope.assignments = $rootScope.assignments2;
+        });
+    });
+
 	this.hoverIn = function (event, assignment) {
-		if (this.hoverTimeout) {
-			clearTimeout(this.hoverTimeout);
-		}
-		console.log(event);
+        $scope.hoverHand = assignment;
+		// if (this.hoverTimeout) {
+		// 	clearTimeout(this.hoverTimeout);
+		// }
+		// console.log(event);
 	};
 
 	this.hoverOut = function () {
-
+        $scope.hoverHand = undefined;
 	};
 
 	this.setTab = function (tab) {
@@ -314,14 +323,49 @@ app.controller('TableCtrl', function ($scope, $rootScope, $interval, $http) {
 
 	this.create = function () {
 		if (this.newAssName) {
-			$rootScope.assignments2.push({
-				id: "asdas" + Math.floor((Math.random()*100)),
-				name: this.newAssName
+			var url = '/api/assignment/new';
+			var data = { name: this.newAssName };
+			$http.post(url, data).then(function (response) {
+				response = response.data;
+				$rootScope.assignments2 = response.assignments;
+				window.localStorage['assignments'] = JSON.stringify(response.assignments);
 			});
 			this.newAssPopupVisible = false;
 			this.newAssName = "";
 		}
 	};
+
+    var inputChangedPromise;
+    $scope.updateAssignment = function (assignment) {
+        if(inputChangedPromise){
+            $timeout.cancel(inputChangedPromise);
+        }
+        inputChangedPromise = $timeout(function () {
+            if (!assignment.name || assignment.name.trim() === '') return;
+            var url = '/api/assignment/update';
+            $http.post(url, assignment).then(function (response) {
+				response = response.data;
+				$rootScope.assignments2 = response.assignments;
+				window.localStorage['assignments'] = JSON.stringify(response.assignments);
+			});
+            console.log(assignment);
+        },1000);
+    };
+
+    $scope.deleteAssignment = function (assignent) {
+        $scope.assignmentToDelete = assignent
+    };
+
+    $scope.confirmDeleteAssignment = function () {
+        if (!$scope.assignmentToDelete || !$scope.assignmentToDelete.id) return;
+            var url = '/api/assignment/delete';
+            $http.post(url, $scope.assignmentToDelete).then(function (response) {
+				response = response.data;
+				$rootScope.assignments2 = response.assignments;
+				window.localStorage['assignments'] = JSON.stringify(response.assignments);
+			});
+        $scope.assignmentToDelete = undefined;
+    };
 
 	this.save = function () {
 
@@ -330,6 +374,7 @@ app.controller('TableCtrl', function ($scope, $rootScope, $interval, $http) {
 	this.cancel = function () {
 		this.newAssPopupVisible = false;
 		this.editPopupVisible = false;
+        $scope.assignmentToDelete = undefined
 	};
 
 	this.remove  = function (assignment) {

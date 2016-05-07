@@ -15,7 +15,7 @@ class Grade(models.Model):
     user = models.ForeignKey('User', on_delete=models.CASCADE, null=True)
 
     def __str__(self):
-        return str(self.value)
+        return str(self.assignment.name) + ' - ' + str(self.value)
 
 
 class User(models.Model):

@@ -267,6 +267,113 @@ def api_update(request):
     return JsonResponse(data)
 
 
+@csrf_exempt
+def api_assignment_new(request):
+    data = {}
+    if request.method == 'POST':
+        post_data = json.loads(request.body.decode('utf-8'))
+        print(post_data)
+
+        try:
+            name = post_data['name']
+        except KeyError as e:
+            return get_error_response(e)
+
+        try:
+            new_assignment = Assignment(name=name)
+            new_assignment.save()
+        except Exception as e:
+            return get_error_response(e)
+
+        assignments = Assignment.objects.all()
+
+        data = {
+            'assignments': [{
+                'id': str(x.id),
+                'name': x.name
+            } for x in assignments]
+        }
+
+    else:
+        pass
+    return JsonResponse(data)
+
+
+@csrf_exempt
+def api_assignment_update(request):
+    data = {}
+    if request.method == 'POST':
+        post_data = json.loads(request.body.decode('utf-8'))
+        print(post_data)
+
+        try:
+            name = post_data['name']
+            id = int(post_data['id'])
+        except KeyError as e:
+            return get_error_response(e)
+
+        try:
+            existing_assignment = Assignment(pk=id)
+            existing_assignment.name = name
+            existing_assignment.save()
+        except Exception as e:
+            return get_error_response(e)
+
+        assignments = Assignment.objects.all()
+
+        data = {
+            'assignments': [{
+                'id': str(x.id),
+                'name': x.name
+            } for x in assignments]
+        }
+
+    else:
+        pass
+    return JsonResponse(data)
+
+
+@csrf_exempt
+def api_assignment_delete(request):
+    data = {}
+    if request.method == 'POST':
+        post_data = json.loads(request.body.decode('utf-8'))
+        print(post_data)
+
+        try:
+            id = int(post_data['id'])
+        except KeyError as e:
+            return get_error_response(e)
+
+        try:
+            existing_assignment = Assignment(pk=id)
+        except Exception as e:
+            return get_error_response(e)
+
+        try:
+            Grade.objects.filter(assignment=existing_assignment).delete()
+        except Exception as e:
+            return get_error_response(e)
+
+        try:
+            Assignment(pk=id).delete()
+        except Exception as e:
+            return get_error_response(e)
+
+        assignments = Assignment.objects.all()
+
+        data = {
+            'assignments': [{
+                'id': str(x.id),
+                'name': x.name
+            } for x in assignments]
+        }
+
+    else:
+        pass
+    return JsonResponse(data)
+
+
 def get_error_response(e):
     return JsonResponse({
                 'success': False,
