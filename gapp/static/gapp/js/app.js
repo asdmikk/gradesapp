@@ -367,6 +367,14 @@ app.controller('TableCtrl', function ($scope, $rootScope, $interval, $timeout, $
         $scope.assignmentToDelete = undefined;
     };
 
+    $scope.calcSum = function (student) {
+        var sum = 0;
+        for (var key in student.grades) {
+            sum += student.grades[key];
+        }
+        return sum;
+    }
+
 	this.save = function () {
 
 	};

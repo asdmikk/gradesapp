@@ -126,6 +126,7 @@
 							<input ng-blur="tbl.checkEmpty(assignment)" class="ass-name-input" type="text" ng-model="assignment.name" ng-change="updateAssignment(assignment)" value="//assignment.name//">
 
 						</th>
+                        <th class="mdl-data-table__cell student-code">Sum</th>
 					</tr>
 					</thead>
 					<tbody>
@@ -135,6 +136,7 @@
 						<td class="assignment-col" ng-repeat="ass in assignments track by $index">
 							<input ng-click="$event.stopPropagation()" type="number" class="ass-grade" ng-model="grade" ng-change="updateStudent(student, ass, grade)" value="//student.grades[ass.id]//"/>
 						</td>
+                        <td class="sum">//calcSum(student)//</td>
 					</tr>
 					</tbody>
 				</table>
