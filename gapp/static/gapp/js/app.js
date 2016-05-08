@@ -153,18 +153,6 @@ app.controller('RegisterCtrl', function ($rootScope, $scope, $http, $timeout) {
 		});
 
 	};
-
-	this.emailAvailable = function (email) {
-		var avaialble = true;
-		$rootScope.users.forEach(function (u) {
-			if (email === u.email) {
-				console.log(email + "===" + u.email);
-				avaialble = false;
-				return false;
-			}
-		});
-		return avaialble;
-	}
 });
 
 app.controller('TableCtrl', function ($scope, $rootScope, $interval, $timeout, $http) {
@@ -195,10 +183,6 @@ app.controller('TableCtrl', function ($scope, $rootScope, $interval, $timeout, $
 
 	this.hoverIn = function (event, assignment) {
         $scope.hoverHand = assignment;
-		// if (this.hoverTimeout) {
-		// 	clearTimeout(this.hoverTimeout);
-		// }
-		// console.log(event);
 	};
 
 	this.hoverOut = function () {
@@ -360,10 +344,15 @@ app.controller('TableCtrl', function ($scope, $rootScope, $interval, $timeout, $
 	}
 });
 
-app.controller('GradesCtrl', function ($scope, $rootScope, $http, $interval) {
+app.controller('GradesCtrl', function ($scope, $rootScope, $http, $interval, $timeout) {
 	$scope.assignments = $rootScope.assignments2;
 	$scope.grades = $rootScope.currentUser.grades;
     $scope.submissions = $rootScope.currentUser.submissions;
+
+	$scope.progress = 90;
+	$scope.maxprogress = 100
+
+	$scope.loadingAssignments = [];
 
     $scope.$watch(function () {
         return $rootScope.currentUser
@@ -389,7 +378,7 @@ app.controller('GradesCtrl', function ($scope, $rootScope, $http, $interval) {
                 $rootScope.assignments2 = response.assignments;
             }
         });
-    }, 30000);
+    }, 3000);
 
     $(document).keyup(function (e) {
         if (e.keyCode === 27) {
@@ -416,19 +405,37 @@ app.controller('GradesCtrl', function ($scope, $rootScope, $http, $interval) {
                 user: $rootScope.currentUser.id,
                 comment: comments
             };
-            $http.post(url, data).then(function (response) {
-                response = response.data;
-                console.log(response)
-                window.localStorage['user'] = JSON.stringify(response.user);
-                window.localStorage['assignments'] = JSON.stringify(response.assignments);
-                $rootScope.currentUser = response.user;
-                $rootScope.assignments2 = response.assignments;
-            });
+
+			var loadingAssignment = $scope.currentAssignment
+
+			$scope.loadingAssignments.push(loadingAssignment)
+
+			$http.post(url, data).then(function (response) {
+				response = response.data;
+				console.log(response)
+				window.localStorage['user'] = JSON.stringify(response.user);
+				window.localStorage['assignments'] = JSON.stringify(response.assignments);
+				$rootScope.currentUser = response.user;
+				$rootScope.assignments2 = response.assignments;
+
+			});
+			$scope.loadingAssignments = $scope.loadingAssignments.filter(function (ass) {
+				return ass.id != loadingAssignment.id;
+			});
+
+
 
 		}
 		$scope.currentAssignment = undefined;
 	};
 
+	$scope.isUploading = function (assignment) {
+		var a = $scope.loadingAssignments.filter(function (ass) {
+			return ass.id === assignment.id;
+		});
+		return a.length > 0
+	};
+	
 	$scope.submitAssignment = function (index) {
         if ($scope.submissions[$scope.assignments[index].id]) return;
 		$scope.currentAssignment = $scope.assignments[index];
@@ -441,25 +448,3 @@ app.controller('GradesCtrl', function ($scope, $rootScope, $http, $interval) {
 
 
 });
-
-// app.controller('AssCtrl', function ($rootScope) {
-// 	this.assignments = $rootScope.assignments2;
-//
-// 	this.create = function () {
-// 		if (this.newAssName) {
-// 			$rootScope.assignments2.push({
-// 				id: "asdas" + Math.floor((Math.random()*100)),
-// 				name: this.newAssName
-// 			});
-// 			this.newAssPopupVisible = false;
-// 			this.newAssName = "";
-// 		}
-// 	};
-//
-// 	this.remove  = function (assignment) {
-// 		$rootScope.assignments2 = _.without($rootScope.assignments2, assignment);
-// 		this.assignments = $rootScope.assignments2;
-// 		console.log(assignment);
-// 		$rootScope.$broadcast('assChange');
-// 	}
-// });
