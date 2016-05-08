@@ -65,7 +65,7 @@ app.controller('LoginCtrl', function ($scope, $rootScope, $http) {
 	this.user = {};
 
 	this.login = function () {
-		var url = 'http://127.0.0.1:8000/api/login';
+		var url = '/api/login';
 		console.log(this.user);
 		$http.post(url, this.user).then(function (response) {
 			response = response.data;
@@ -111,7 +111,7 @@ app.controller('RegisterCtrl', function ($rootScope, $scope, $http, $timeout) {
 	});
 
 	this.register = function () {
-		var url = 'http://127.0.0.1:8000/api/register';
+		var url = '/api/register';
 		data = this.user;
 
 		this.user.status = this.status;
